@@ -1,26 +1,26 @@
-from fastapi import FastAPI
-import sqlite3
-from pydantic import BaseModel
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-app = FastAPI()
+# Crée une connexion à la base de données SQLite
+SQLALCHEMY_DATABASE_URL = "sqlite:///./pokemon.db"  # Assure-toi que le fichier pokemon.db est bien là
 
-# Modèle de données pour un Pokémon
-class Pokemon(BaseModel):
-    name: str
-    type: str
+# Crée l'objet de moteur SQLAlchemy
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 
-# Connexion à la base SQLite
-def get_db_connection():
-    conn = sqlite3.connect("pokemon.db")
-    conn.row_factory = sqlite3.Row
-    return conn
+# Crée la base
+Base = declarative_base()
 
-# Route pour ajouter un Pokémon
-@app.post("/pokemons")
-def add_pokemon(pokemon: Pokemon):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO pokemons (name, type) VALUES (?, ?)", (pokemon.name, pokemon.type))
-    conn.commit()
-    conn.close()
-    return {"message": f"Pokémon {pokemon.name} ajouté avec succès!"}
+# Crée la session locale pour interagir avec la base
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Définition du modèle Pokémon avec SQLAlchemy
+class Pokemon(Base):
+    __tablename__ = "pokemons"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    type = Column(String)
+
+# Crée les tables dans la base de données
+Base.metadata.create_all(bind=engine)

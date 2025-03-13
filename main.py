@@ -1,8 +1,7 @@
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from database import SessionLocal, Pokemon
-import sqlite3  # ✅ Importation de SQLite au début
+from database import SessionLocal, Pokemon  # SQLAlchemy import seulement, pas sqlite3
 
 app = FastAPI()
 
