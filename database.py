@@ -1,20 +1,26 @@
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from fastapi import FastAPI
+import sqlite3
+from pydantic import BaseModel
 
-DATABASE_URL = "sqlite:///./pokemon.db"
+app = FastAPI()
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+# Modèle de données pour un Pokémon
+class Pokemon(BaseModel):
+    name: str
+    type: str
 
-# Modèle Pokémon
-class Pokemon(Base):
-    __tablename__ = "pokemons"
+# Connexion à la base SQLite
+def get_db_connection():
+    conn = sqlite3.connect("pokemon.db")
+    conn.row_factory = sqlite3.Row
+    return conn
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    type = Column(String, index=True)
-
-# Création des tables
-Base.metadata.create_all(bind=engine)
+# Route pour ajouter un Pokémon
+@app.post("/pokemons")
+def add_pokemon(pokemon: Pokemon):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO pokemons (name, type) VALUES (?, ?)", (pokemon.name, pokemon.type))
+    conn.commit()
+    conn.close()
+    return {"message": f"Pokémon {pokemon.name} ajouté avec succès!"}
